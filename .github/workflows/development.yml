@@ -27,7 +27,7 @@ jobs:
           script: |
             echo "🚀 Starting deployment..."
             cd aws-ec2-cicd-demo
-            git pull
+            git pull origin master
             npm install
             npm run build
             pm2 restart aws-ec2-cicd-demo || pm2 start npm --name "aws-ec2-cicd-demo" -- start
