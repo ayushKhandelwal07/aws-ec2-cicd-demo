@@ -15,16 +15,61 @@ jobs:
       - name: Checkout the code
         uses: actions/checkout@v2
 
-      - name: executing remote ssh commands using password
+      - name: Deploy to EC2 instance
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: 65.2.121.145
           username: ubuntu
           key: ${{ secrets.SSH_KEY }}
           port: 22
-          script: | 
+          timeout: 60s
+          command_timeout: 15m
+          script: |
+            echo "🚀 Starting deployment..."
             cd aws-ec2-cicd-demo
             git pull
             npm install
             npm run build
-            npm run start
+            pm2 restart aws-ec2-cicd-demo || pm2 start npm --name "aws-ec2-cicd-demo" -- start
+            echo "✅ Deployment completed!"
+            pm2 status
+
+            # ALTERNATIVE: Full robust PM2 setup (commented out)
+            # echo "🚀 Starting deployment..."
+            # 
+            # # Navigate to the project directory
+            # cd aws-ec2-cicd-demo
+            # 
+            # # Pull latest changes
+            # echo "📥 Pulling latest changes..."
+            # git pull
+            # 
+            # # Install dependencies
+            # echo "📦 Installing dependencies..."
+            # npm install
+            # 
+            # # Build the application
+            # echo "🔨 Building application..."
+            # npm run build
+            # 
+            # # Install PM2 globally if not already installed
+            # echo "🔧 Setting up PM2..."
+            # npm install -g pm2 || true
+            # 
+            # # Stop existing process
+            # echo "🛑 Stopping existing application..."
+            # pm2 stop aws-ec2-cicd-demo || true
+            # pm2 delete aws-ec2-cicd-demo || true
+            # 
+            # # Start the application with PM2
+            # echo "🚀 Starting application with PM2..."
+            # pm2 start npm --name "aws-ec2-cicd-demo" -- start
+            # 
+            # # Save PM2 configuration
+            # pm2 save
+            # 
+            # # Setup PM2 to start on system boot
+            # pm2 startup || true
+            # 
+            # echo "✅ Deployment completed!"
+            # pm2 status
