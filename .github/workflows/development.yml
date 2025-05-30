@@ -3,7 +3,8 @@ name: Push-to-EC2 instance
 on:
   push:
     branches:
-      - main, master
+      - main
+      - master
 
 jobs:
   deploy:
@@ -12,13 +13,13 @@ jobs:
 
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - name: execute remote ssh commands using ssh key
-        uses: appleboy/ssh-action@1.2.0
+      - name: Deploy to EC2 instance
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: 65.2.121.145
           username: ubuntu
-          password: ${{ secrets.SSH_KEY }}
+          key: ${{ secrets.SSH_KEY }}
           port: 22
           script: whoami
