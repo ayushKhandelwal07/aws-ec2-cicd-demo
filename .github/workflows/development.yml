@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - master
 
 jobs:
   deploy:
@@ -19,7 +20,7 @@ jobs:
         with:
           host: 13.127.14.79
           username: ubuntu
-          key: ${{ secrets.PRIVATE_SSH_KEY }}
+          key: ${{ secrets.SSH_KEY }}
           port: 22
           script: | 
             cd aws-ec2-cicd-demo
