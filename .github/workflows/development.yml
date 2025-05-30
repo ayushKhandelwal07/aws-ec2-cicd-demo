@@ -23,5 +23,9 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: 22
           script: |
-            ls
-            
+            cd ec_2_auto_deployment
+            git pull 
+            npm install
+            npm run build
+            npm run start
+
