@@ -15,6 +15,17 @@ jobs:
       - name: Checkout the code
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies and build
+        run: |
+          npm ci
+          npm run build
+
       - name: Deploy to EC2 instance
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -23,9 +34,29 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: 22
           script: |
+            echo "🚀 Starting deployment..."
+            cd /home/ubuntu
+            
+            # Remove old deployment
+            sudo rm -rf aws-ec2-cicd-demo || true
+            
+            # Clone the repository
+            git clone https://github.com/ayushKhandelwal07/aws-ec2-cicd-demo.git
             cd aws-ec2-cicd-demo
-            git pull 
-            npm install
-            npm run build
-            npm run start
+            
+            # Install only production dependencies
+            echo "📦 Installing production dependencies..."
+            npm ci --only=production
+            
+            # Stop existing process
+            pm2 stop deployment-app || true
+            pm2 delete deployment-app || true
+            
+            # Start the application
+            echo "🚀 Starting application..."
+            pm2 start npm --name "deployment-app" -- start
+            pm2 save
+            
+            echo "✅ Deployment completed!"
+            pm2 status
 
