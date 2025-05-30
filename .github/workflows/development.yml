@@ -1,4 +1,4 @@
-name: Deploy to EC2
+name: Push-to-EC2 instance
 
 on:
   push:
@@ -13,8 +13,18 @@ jobs:
 
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies and build
+        run: |
+          npm ci
+          npm run build
       - name: Deploy to EC2 instance
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -22,54 +32,29 @@ jobs:
           username: ubuntu
           key: ${{ secrets.SSH_KEY }}
           port: 22
-          timeout: 60s
-          command_timeout: 15m
           script: |
             echo "🚀 Starting deployment..."
+            cd /home/ubuntu
+            
+            # Remove old deployment
+            sudo rm -rf aws-ec2-cicd-demo || true
+            
+            # Clone the repository
+            git clone https://github.com/ayushKhandelwal07/aws-ec2-cicd-demo.git
             cd aws-ec2-cicd-demo
-            git pull origin master
-            npm install
-            npm run build
-            pm2 restart aws-ec2-cicd-demo || pm2 start npm --name "aws-ec2-cicd-demo" -- start
+            
+            # Install only production dependencies
+            echo "📦 Installing production dependencies..."
+            npm ci --only=production
+            
+            # Stop existing process
+            pm2 stop deployment-app || true
+            pm2 delete deployment-app || true
+            
+            # Start the application
+            echo "🚀 Starting application..."
+            pm2 start npm --name "deployment-app" -- start
+            pm2 save
+            
             echo "✅ Deployment completed!"
             pm2 status
-
-            # ALTERNATIVE: Full robust PM2 setup (commented out)
-            # echo "🚀 Starting deployment..."
-            # 
-            # # Navigate to the project directory
-            # cd aws-ec2-cicd-demo
-            # 
-            # # Pull latest changes
-            # echo "📥 Pulling latest changes..."
-            # git pull
-            # 
-            # # Install dependencies
-            # echo "📦 Installing dependencies..."
-            # npm install
-            # 
-            # # Build the application
-            # echo "🔨 Building application..."
-            # npm run build
-            # 
-            # # Install PM2 globally if not already installed
-            # echo "🔧 Setting up PM2..."
-            # npm install -g pm2 || true
-            # 
-            # # Stop existing process
-            # echo "🛑 Stopping existing application..."
-            # pm2 stop aws-ec2-cicd-demo || true
-            # pm2 delete aws-ec2-cicd-demo || true
-            # 
-            # # Start the application with PM2
-            # echo "🚀 Starting application with PM2..."
-            # pm2 start npm --name "aws-ec2-cicd-demo" -- start
-            # 
-            # # Save PM2 configuration
-            # pm2 save
-            # 
-            # # Setup PM2 to start on system boot
-            # pm2 startup || true
-            # 
-            # echo "✅ Deployment completed!"
-            # pm2 status
