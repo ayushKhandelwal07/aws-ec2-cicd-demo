@@ -1,10 +1,9 @@
-name: Push-to-EC2 instance
+name: Deploy to EC2
 
 on:
   push:
     branches:
       - main
-      - master
 
 jobs:
   deploy:
@@ -13,50 +12,18 @@ jobs:
 
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies and build
-        run: |
-          npm ci
-          npm run build
-
-      - name: Deploy to EC2 instance
+      - name: executing remote ssh commands using password
         uses: appleboy/ssh-action@v1.2.0
         with:
-          host: 65.2.121.145
+          host: 13.127.14.79
           username: ubuntu
-          key: ${{ secrets.SSH_KEY }}
+          key: ${{ secrets.PRIVATE_SSH_KEY }}
           port: 22
-          script: |
-            echo "🚀 Starting deployment..."
-            cd /home/ubuntu
-            
-            # Remove old deployment
-            sudo rm -rf aws-ec2-cicd-demo || true
-            
-            # Clone the repository
-            git clone https://github.com/ayushKhandelwal07/aws-ec2-cicd-demo.git
+          script: | 
             cd aws-ec2-cicd-demo
-            
-            # Install only production dependencies
-            echo "📦 Installing production dependencies..."
-            npm ci --only=production
-            
-            # Stop existing process
-            pm2 stop deployment-app || true
-            pm2 delete deployment-app || true
-            
-            # Start the application
-            echo "🚀 Starting application..."
-            pm2 start npm --name "deployment-app" -- start
-            pm2 save
-            
-            echo "✅ Deployment completed!"
-            pm2 status
-
+            git pull
+            npm install
+            npm run build
+            npm run start
